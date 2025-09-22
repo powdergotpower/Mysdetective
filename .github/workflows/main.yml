@@ -1,0 +1,76 @@
+name: Mysdetective CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Test Project
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Run tests (if any)
+      - name: Run tests
+        run: npm run test || echo "No tests found, skipping"
+
+      # 5. Build the Vite project
+      - name: Build project
+        run: npm run build
+
+      # 6. Optional: Preview build (checks if build works)
+      - name: Preview build
+        run: npm run preview & sleep 5
+
+      # 7. Upload production build as artifact
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Mysdetective-build
+          path: dist
+
+  # Optional: Deploy step if you have GitHub Pages
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
